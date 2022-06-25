@@ -53,7 +53,7 @@ class BaseTcu(ClockedObject):
 
     caches = VectorParam.Cache([], "The caches that need to be flushed/invalidated")
 
-    mmio_region = Param.AddrRange(AddrRange(0xF0000000, 0xF0003FFF), "MMIO region of the TCU")
+    mmio_region = Param.AddrRange(AddrRange(0xF0000000, 0xF0008000), "MMIO region of the TCU")
 
     tile_id = Param.Unsigned("ID of the tile this TCU belongs to")
 
