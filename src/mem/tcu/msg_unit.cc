@@ -313,10 +313,14 @@ MessageUnit::startSendReplyWithEP(EpFile::EpCache &eps, epid_t epid)
     NocAddr nocAddr(sep.r1.tgtTile, sep.r1.tgtEp);
     uint flags = XferUnit::MESSAGE;
 
+    // TODO: Fix delay for encryption and integrity tags depending on data size
+    Cycles send_transfer_delay = tcu.startMsgTransferDelay + tcu.dataEncryptionLatency;
+    DPRINTFS(Tcu, (&tcu), "msg_unit: startSendReplyWithEP Confidentiality: tile=%u, ep=%u\n", sep.r1.tgtTile, sep.r1.tgtEp);
+
     // start the transfer of the payload
     auto *ev = new SendTransferEvent(
         this, sep.id, phys, data.size, flags, nocAddr, header);
-    tcu.startTransfer(ev, tcu.startMsgTransferDelay);
+    tcu.startTransfer(ev, send_transfer_delay);
 
     eps.setAutoFinish(false);
 }
@@ -822,6 +826,10 @@ MessageUnit::recvFromNocWithEP(EpFile::EpCache &eps, PacketPtr pkt)
     Cycles delay = tcu.ticksToCycles(pkt->headerDelay);
     pkt->headerDelay = 0;
     delay += tcu.nocToTransferLatency;
+
+    // TODO: Add the correct encryption latency
+    delay += tcu.dataEncryptionLatency;
+    DPRINTFS(Tcu, (&tcu), "msg_unit: recvFromNocWithEP: Confidentiality: ep=%u\n", epid);
 
     uint rflags = XferUnit::XferFlags::MSGRECV;
     Addr physAddr = rep.r1.buffer + (msgidx << rep.r0.slotSize);

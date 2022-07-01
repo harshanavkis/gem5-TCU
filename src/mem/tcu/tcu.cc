@@ -76,7 +76,8 @@ Tcu::Tcu(const TcuParams &p)
     startMsgTransferDelay(p.start_msg_transfer_delay),
     transferToMemRequestLatency(p.transfer_to_mem_request_latency),
     transferToNocLatency(p.transfer_to_noc_latency),
-    nocToTransferLatency(p.noc_to_transfer_latency)
+    nocToTransferLatency(p.noc_to_transfer_latency),
+    dataEncryptionLatency(p.data_encryption_latency)
 {
     assert(p.buf_size >= maxNocPacketSize);
 

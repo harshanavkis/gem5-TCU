@@ -258,6 +258,8 @@ class Tcu : public BaseTcu
     const Cycles transferToNocLatency;
     const Cycles nocToTransferLatency;
 
+    const Cycles dataEncryptionLatency;
+
     // NoC receives
     Stats::Scalar nocMsgRecvs;
     Stats::Scalar nocReadRecvs;
@@ -270,6 +272,9 @@ class Tcu : public BaseTcu
     Stats::Scalar irqInjects;
     Stats::Scalar resets;
 
+    // security stats
+    Stats::Scalar numEncrypt;
+    Stats::Scalar numDecrypt;
 };
 
 #endif // __MEM_TCU_TCU_HH__
