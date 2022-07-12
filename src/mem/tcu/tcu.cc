@@ -374,6 +374,7 @@ Tcu::sendNocResponse(PacketPtr pkt, TcuError result)
         Cycles delay = ticksToCycles(
             pkt->headerDelay + pkt->payloadDelay);
         delay += nocToTransferLatency;
+        // TODO: Add correct latency depending on payload
 
         pkt->headerDelay = 0;
         pkt->payloadDelay = 0;
@@ -673,15 +674,25 @@ Tcu::forwardRequestToRegFile(PacketPtr pkt, bool isCpuRequest)
 
     if (~result & RegFile::WROTE_EXT_CMD)
     {
-        assert(isCpuRequest || result == RegFile::WROTE_NONE);
+        assert(isCpuRequest || result == RegFile::WROTE_NONE || result == RegFile::READ_EP_REGION);
         pkt->headerDelay = 0;
         pkt->payloadDelay = 0;
 
+        // If it is not a cpu request we pay the delay for encryption
         if (isCpuRequest &&
             (result & (RegFile::WROTE_CMD | RegFile::WROTE_PRIV_CMD)) == 0)
             schedCpuResponse(pkt, when);
         else if(!isCpuRequest)
-            schedNocResponse(pkt, when);
+        {
+            Cycles encDelay = Cycles(0);
+            if(result & RegFile::READ_EP_REGION)
+            {
+                // Local encryption and remote decryption
+                // TODO: Add correct delay based on data sizes
+                encDelay = dataEncryptionLatency + dataEncryptionLatency;
+            }
+            schedNocResponse(pkt, clockEdge(transportDelay + registerAccessLatency + encDelay));
+        }
 
         if (result & RegFile::WROTE_CORE_REQ)
             schedule(completeCoreReqEvent, when);

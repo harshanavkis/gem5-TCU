@@ -427,6 +427,7 @@ class RegFile
         WROTE_CORE_REQ  = 8,
         WROTE_CLEAR_IRQ = 16,
         WROTE_PRINT     = 32,
+        READ_EP_REGION  = 64,
     };
 
     RegFile(Tcu &tcu, const std::string& name, unsigned numEndpoints);

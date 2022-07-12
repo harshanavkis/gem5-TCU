@@ -72,6 +72,7 @@ MessageUnit::startSend(const CmdCommand::Bits &cmd)
     cmdEps.addEp(cmd.epid);
     if (cmd.arg0 != Tcu::INVALID_EP_ID)
         cmdEps.addEp(cmd.arg0);
+    DPRINTFS(Tcu, (&tcu), "startSend\n");
     cmdEps.onFetched(std::bind(&MessageUnit::startSendReplyWithEP,
                                this, std::placeholders::_1, cmd.epid));
 }
@@ -79,6 +80,7 @@ MessageUnit::startSend(const CmdCommand::Bits &cmd)
 void
 MessageUnit::startReply(const CmdCommand::Bits &cmd)
 {
+    DPRINTFS(Tcu, (&tcu), "startReply\n");
     cmdEps.addEp(cmd.epid);
     cmdEps.onFetched(std::bind(&MessageUnit::startReplyWithEP,
                                this, std::placeholders::_1));
@@ -313,9 +315,8 @@ MessageUnit::startSendReplyWithEP(EpFile::EpCache &eps, epid_t epid)
     NocAddr nocAddr(sep.r1.tgtTile, sep.r1.tgtEp);
     uint flags = XferUnit::MESSAGE;
 
-    // TODO: Fix delay for encryption and integrity tags depending on data size
-    Cycles send_transfer_delay = tcu.startMsgTransferDelay + tcu.dataEncryptionLatency;
-    DPRINTFS(Tcu, (&tcu), "msg_unit: startSendReplyWithEP Confidentiality: tile=%u, ep=%u\n", sep.r1.tgtTile, sep.r1.tgtEp);
+    Cycles send_transfer_delay = tcu.startMsgTransferDelay;
+    DPRINTFS(Tcu, (&tcu), "msg_unit: startSendReplyWithEP: tile=%u, ep=%u\n", sep.r1.tgtTile, sep.r1.tgtEp);
 
     // start the transfer of the payload
     auto *ev = new SendTransferEvent(
@@ -436,6 +437,7 @@ MessageUnit::finishMsgSendWithEp(EpFile::EpCache &eps, TcuError result)
 void
 MessageUnit::startInvalidate(const ExtCommand::Bits &cmd)
 {
+    DPRINTFS(Tcu, (&tcu), "startInvalidate\n");
     extCmdEps.addEp(cmd.arg & 0xFFFF);
     extCmdEps.onFetched(std::bind(&MessageUnit::invalidateWithEP,
                                   this, std::placeholders::_1));
@@ -476,6 +478,7 @@ MessageUnit::invalidateWithEP(EpFile::EpCache &eps)
 void
 MessageUnit::startFetch(const CmdCommand::Bits &cmd)
 {
+    // DPRINTFS(Tcu, (&tcu), "startFetch\n");
     cmdEps.addEp(cmd.epid);
     cmdEps.onFetched(std::bind(&MessageUnit::fetchWithEP,
                                this, std::placeholders::_1));
@@ -547,6 +550,7 @@ found:
 void
 MessageUnit::startAck(const CmdCommand::Bits &cmd)
 {
+    // DPRINTFS(Tcu, (&tcu), "startAck\n");
     cmdEps.addEp(cmd.epid);
     cmdEps.onFetched(std::bind(&MessageUnit::startAckWithEP,
                      this, std::placeholders::_1));
@@ -827,8 +831,6 @@ MessageUnit::recvFromNocWithEP(EpFile::EpCache &eps, PacketPtr pkt)
     pkt->headerDelay = 0;
     delay += tcu.nocToTransferLatency;
 
-    // TODO: Add the correct encryption latency
-    delay += tcu.dataEncryptionLatency;
     DPRINTFS(Tcu, (&tcu), "msg_unit: recvFromNocWithEP: Confidentiality: ep=%u\n", epid);
 
     uint rflags = XferUnit::XferFlags::MSGRECV;

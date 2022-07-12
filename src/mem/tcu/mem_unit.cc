@@ -79,6 +79,7 @@ void
 MemoryUnit::startRead(const CmdCommand::Bits& cmd)
 {
     eps.addEp(cmd.epid);
+    DPRINTFS(Tcu, (&tcu), "mem_unit: startRead\n");
     eps.onFetched(
         std::bind(&MemoryUnit::startReadWithEP, this, std::placeholders::_1));
 }
@@ -150,9 +151,14 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
                                    size,
                                    MemCmd::ReadReq);
 
+    DPRINTFS(Tcu, (&tcu), "mem_unit: startReadWithEP\n");
+    // TODO: Add the correct encryption latency
+    // Include latency for packet type and address
+    // Latency for local encrypt and remote decrypt
+    // All delays are paid at the sender
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
                        pkt,
-                       tcu.commandToNocRequestLatency);
+                       tcu.commandToNocRequestLatency + tcu.dataEncryptionLatency + tcu.dataEncryptionLatency);
 }
 
 void
@@ -200,6 +206,7 @@ MemoryUnit::readComplete(const CmdCommand::Bits& cmd, PacketPtr pkt, TcuError er
         }
     }
 
+    DPRINTFS(Tcu, (&tcu), "mem_unit: readComplete\n");
     auto xfer = new ReadTransferEvent(phys, 0, pkt);
     tcu.startTransfer(xfer, delay);
 }
@@ -227,6 +234,7 @@ void
 MemoryUnit::startWrite(const CmdCommand::Bits& cmd)
 {
     eps.addEp(cmd.epid);
+    DPRINTFS(Tcu, (&tcu), "mem_unit: startWrite\n");
     eps.onFetched(
         std::bind(&MemoryUnit::startWriteWithEP, this, std::placeholders::_1));
 }
@@ -303,6 +311,7 @@ MemoryUnit::startWriteWithEP(EpFile::EpCache &eps)
             return;
         }
     }
+        DPRINTFS(Tcu, (&tcu), "mem_unit: startWriteWithEP\n");
 
     NocAddr dest(mep.r0.targetTile, mep.r1.remoteAddr + offset);
 
@@ -333,7 +342,11 @@ MemoryUnit::WriteTransferEvent::transferDone(TcuError result)
         else
             pktType = Tcu::NocPacketType::WRITE_REQ;
 
-        tcu().sendNocRequest(pktType, pkt, delay);
+        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone\n");
+        // local encrypt and remote decrypt
+        // TODO: Add correct encryption latency
+        Cycles encDelay = tcu().dataEncryptionLatency +tcu().dataEncryptionLatency;
+        tcu().sendNocRequest(pktType, pkt, delay + encDelay);
     }
 }
 
@@ -348,6 +361,7 @@ MemoryUnit::writeComplete(const CmdCommand::Bits& cmd, PacketPtr pkt, TcuError e
     // writing
     Cycles delay = tcu.ticksToCycles(pkt->headerDelay);
     tcu.scheduleCmdFinish(delay, error);
+    DPRINTFS(Tcu, (&tcu), "mem_unit: writeComplete\n");
 
     tcu.freeRequest(pkt);
 }
@@ -379,6 +393,7 @@ MemoryUnit::recvFromNoc(PacketPtr pkt)
     if (tcu.mmioRegion.contains(addr.offset))
     {
         pkt->setAddr(addr.offset);
+        DPRINTFS(Tcu, (&tcu), "mem_unit: recvFromNoc: in mmio region\n");
 
         tcu.forwardRequestToRegFile(pkt, false);
 
@@ -389,6 +404,7 @@ MemoryUnit::recvFromNoc(PacketPtr pkt)
     {
         // the same as above: the transfer happens piece by piece and we can
         // start after the header
+        DPRINTFS(Tcu, (&tcu), "mem_unit: recvFromNoc: out of mmio region\n");
         Cycles delay = tcu.ticksToCycles(pkt->headerDelay);
         pkt->headerDelay = 0;
 
@@ -427,7 +443,8 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
         auto state = dynamic_cast<Tcu::NocSenderState*>(pkt->senderState);
         state->result = result;
 
-        Cycles delay = tcu().transferToNocLatency;
+        // TODO: Add correct encryption latencies
+        Cycles delay = tcu().transferToNocLatency + tcu().dataEncryptionLatency + tcu().dataEncryptionLatency;
         tcu().schedNocResponse(pkt, tcu().clockEdge(delay));
     }
 }

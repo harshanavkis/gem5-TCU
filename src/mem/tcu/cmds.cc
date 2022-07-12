@@ -29,6 +29,7 @@
  */
 
 #include "debug/TcuCmd.hh"
+#include "debug/Tcu.hh"
 #include "mem/tcu/cmds.hh"
 #include "mem/tcu/mem_unit.hh"
 #include "mem/tcu/msg_unit.hh"

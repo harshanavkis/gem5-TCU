@@ -379,7 +379,11 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
             auto reg = static_cast<ExtReg>(regAddr / sizeof(reg_t));
 
             if (pkt->isRead())
+            {
+                DPRINTFS(Tcu, (&tcu), "Ext register read\n");
                 data[offset / sizeof(reg_t)] = get(reg, access);
+                res |= READ_EP_REGION;
+            }
             // external registers can't be set by the CPU
             else if (pkt->isWrite() && !isCpuRequest)
             {
