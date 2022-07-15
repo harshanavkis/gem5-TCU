@@ -156,9 +156,10 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
     // Include latency for packet type and address
     // Latency for local encrypt and remote decrypt
     // All delays are paid at the sender
+    Cycles encDelay = tcu.dataEncryptionLatency + tcu.dataEncryptionLatency;
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
                        pkt,
-                       tcu.commandToNocRequestLatency + tcu.dataEncryptionLatency + tcu.dataEncryptionLatency);
+                       tcu.commandToNocRequestLatency + encDelay);
 }
 
 void
@@ -226,6 +227,7 @@ MemoryUnit::ReadTransferEvent::transferDone(TcuError result)
         finishReadWrite(tcu(), pkt->getSize());
 
     tcu().scheduleCmdFinish(Cycles(1), result);
+    DPRINTFS(Tcu, (&tcu()), "mem_unit: ReadTransferEvent::transferDone\n");
 
     tcu().freeRequest(pkt);
 }
@@ -410,6 +412,7 @@ MemoryUnit::recvFromNoc(PacketPtr pkt)
 
         auto type = pkt->isWrite() ? XferUnit::TransferType::REMOTE_WRITE
                                    : XferUnit::TransferType::REMOTE_READ;
+
         // accesses from remote TCUs always refer to physical memory
         auto *ev = new ReceiveTransferEvent(type, NocAddr(addr.offset), 0, pkt);
         tcu.startTransfer(ev, delay);
@@ -443,8 +446,11 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
         auto state = dynamic_cast<Tcu::NocSenderState*>(pkt->senderState);
         state->result = result;
 
+        // Local encrypt and remote decrypt
         // TODO: Add correct encryption latencies
-        Cycles delay = tcu().transferToNocLatency + tcu().dataEncryptionLatency + tcu().dataEncryptionLatency;
+        DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent::transferDone: size: %u\n", size());
+        Cycles encDelay = tcu().dataEncryptionLatency + tcu().dataEncryptionLatency;
+        Cycles delay = tcu().transferToNocLatency + encDelay;
         tcu().schedNocResponse(pkt, tcu().clockEdge(delay));
     }
 }

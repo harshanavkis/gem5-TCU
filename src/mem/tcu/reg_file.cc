@@ -451,7 +451,10 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
                 }
 
                 if (pkt->isRead())
+                {
                     data[offset / sizeof(reg_t)] = get(epId, regNumber);
+                    res |= READ_EP_REGION;
+                }
                 // writable only from remote and privileged TCUs
                 else if (!isCpuRequest || isPriv)
                     set(epId, regNumber, data[offset / sizeof(reg_t)]);
