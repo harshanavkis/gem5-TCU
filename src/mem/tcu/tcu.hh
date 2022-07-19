@@ -179,6 +179,9 @@ class Tcu : public BaseTcu
 
     void printPacket(PacketPtr pkt) const;
 
+    // Calculate cost of pipelined encryption
+    Cycles totalEncryptionCost(Addr size);
+
   private:
 
     bool has_message(epid_t ep);
@@ -259,6 +262,10 @@ class Tcu : public BaseTcu
     const Cycles nocToTransferLatency;
 
     const Cycles dataEncryptionLatency;
+
+    const Cycles interconnectTransferLatency;
+
+    const bool parallelPipelined;
 
     // NoC receives
     Stats::Scalar nocMsgRecvs;

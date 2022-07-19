@@ -77,7 +77,9 @@ Tcu::Tcu(const TcuParams &p)
     transferToMemRequestLatency(p.transfer_to_mem_request_latency),
     transferToNocLatency(p.transfer_to_noc_latency),
     nocToTransferLatency(p.noc_to_transfer_latency),
-    dataEncryptionLatency(p.data_encryption_latency)
+    dataEncryptionLatency(p.data_encryption_latency),
+    interconnectTransferLatency(p.interconnect_transfer_latency),
+    parallelPipelined(p.parallel_pipelined)
 {
     assert(p.buf_size >= maxNocPacketSize);
 
@@ -688,8 +690,8 @@ Tcu::forwardRequestToRegFile(PacketPtr pkt, bool isCpuRequest)
             if(result & RegFile::READ_EP_REGION)
             {
                 // Local encryption and remote decryption
-                // TODO: Add correct delay based on data sizes
-                encDelay = dataEncryptionLatency + dataEncryptionLatency;
+                Cycles one_side_delay = totalEncryptionCost(pkt->getSize());
+                encDelay = one_side_delay;
             }
             schedNocResponse(pkt, clockEdge(transportDelay + registerAccessLatency + encDelay));
         }
@@ -723,4 +725,45 @@ Tcu::printPacket(PacketPtr pkt) const
     DPRINTF(TcuPackets, "Dumping packet %s @ %p with %lu bytes\n",
         pkt->cmdString(), pkt->getAddr(), pkt->getSize());
     DDUMP(TcuPackets, pkt->getPtr<uint8_t>(), pkt->getSize());
+}
+
+Cycles
+Tcu::totalEncryptionCost(Addr size)
+{
+    if(dataEncryptionLatency == 0)
+    {
+        return Cycles(0);
+    }
+    // If cost for encrypting a single 16B block is n
+    // cycles, then in a fully pipelined AES encryption engine
+    // the first encrypted block would appear after n cycles, the 
+    // next after n+1 cycles, next after n+2 cycles and so on
+    uint64_t num_blocks;
+    if(size < 16)
+    {
+        num_blocks = 1;
+    }
+    else if(size % 16 != 0)
+    {
+        num_blocks = (size / 16) + 1;
+    }
+    else
+    {
+        num_blocks = (size / 16);
+    }
+
+    Cycles total_encryption_cost;
+    if(!parallelPipelined)
+    {
+        Cycles one_sided_delay = dataEncryptionLatency + Cycles(num_blocks - 1);
+        total_encryption_cost = one_sided_delay + one_sided_delay + interconnectTransferLatency;
+    }
+    else
+    {
+        total_encryption_cost = dataEncryptionLatency + Cycles(num_blocks - 1) + interconnectTransferLatency + dataEncryptionLatency;
+    }
+
+    DPRINTFS(Tcu, this, "num_blocks: %lu, Total encryption cost:%lu\n", num_blocks, total_encryption_cost);
+
+    return total_encryption_cost;
 }

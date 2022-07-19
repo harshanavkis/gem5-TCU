@@ -156,10 +156,11 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
     // Include latency for packet type and address
     // Latency for local encrypt and remote decrypt
     // All delays are paid at the sender
-    Cycles encDelay = tcu.dataEncryptionLatency + tcu.dataEncryptionLatency;
+    // Cycles encDelay = tcu.dataEncryptionLatency + tcu.dataEncryptionLatency;
+    Cycles one_sided_delay = tcu.dataEncryptionLatency;
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
                        pkt,
-                       tcu.commandToNocRequestLatency + encDelay);
+                       tcu.commandToNocRequestLatency + one_sided_delay + one_sided_delay);
 }
 
 void
@@ -344,11 +345,12 @@ MemoryUnit::WriteTransferEvent::transferDone(TcuError result)
         else
             pktType = Tcu::NocPacketType::WRITE_REQ;
 
-        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone\n");
+        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: size: %lu\n", size());
         // local encrypt and remote decrypt
         // TODO: Add correct encryption latency
-        Cycles encDelay = tcu().dataEncryptionLatency +tcu().dataEncryptionLatency;
-        tcu().sendNocRequest(pktType, pkt, delay + encDelay);
+        //Cycles encDelay = tcu().dataEncryptionLatency +tcu().dataEncryptionLatency;
+        Cycles one_sided_delay = tcu().totalEncryptionCost(pkt->getSize());
+        tcu().sendNocRequest(pktType, pkt, delay + one_sided_delay);
     }
 }
 
@@ -448,9 +450,10 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
 
         // Local encrypt and remote decrypt
         // TODO: Add correct encryption latencies
-        DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent::transferDone: size: %u\n", size());
-        Cycles encDelay = tcu().dataEncryptionLatency + tcu().dataEncryptionLatency;
-        Cycles delay = tcu().transferToNocLatency + encDelay;
+        DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent::transferDone: size: %u\n", pkt->getSize());
+        // Cycles encDelay = tcu().dataEncryptionLatency + tcu().dataEncryptionLatency;
+        Cycles one_sided_delay = tcu().totalEncryptionCost(pkt->getSize());
+        Cycles delay = tcu().transferToNocLatency + one_sided_delay;
         tcu().schedNocResponse(pkt, tcu().clockEdge(delay));
     }
 }
