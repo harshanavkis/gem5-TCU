@@ -318,9 +318,20 @@ MessageUnit::startSendReplyWithEP(EpFile::EpCache &eps, epid_t epid)
     Cycles send_transfer_delay = tcu.startMsgTransferDelay;
     DPRINTFS(Tcu, (&tcu), "msg_unit: startSendReplyWithEP: tile=%u, ep=%u\n", sep.r1.tgtTile, sep.r1.tgtEp);
 
+    // Whether the sender specifies a valid reply endpoint
+    bool reply_required;
+    if(replyEpId != Tcu::INVALID_EP_ID)
+    {
+        reply_required = true;
+    }
+    else
+    {
+        reply_required = false;
+    }
+
     // start the transfer of the payload
     auto *ev = new SendTransferEvent(
-        this, sep.id, phys, data.size, flags, nocAddr, header);
+        this, sep.id, phys, data.size, flags, nocAddr, header, reply_required);
     tcu.startTransfer(ev, send_transfer_delay);
 
     eps.setAutoFinish(false);
@@ -334,6 +345,7 @@ MessageUnit::SendTransferEvent::transferStart()
     // note that this causes no additional delay because we assume that we
     // create the header directly in the buffer (and if there is no one
     // free we just wait until there is)
+    // TODO send key in the packet
     memcpy(data(), header, sizeof(*header));
 
     // for the header
@@ -382,6 +394,9 @@ MessageUnit::SendTransferEvent::transferDone(TcuError result)
         if (result == TcuError::NONE)
             msgUnit->sendReplyFinished = false;
     }
+
+    if((result == TcuError::NONE) && reply_req)
+        result = TcuError::REPLY_REQ;
 
     MemoryUnit::WriteTransferEvent::transferDone(result);
 

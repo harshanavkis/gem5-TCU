@@ -45,6 +45,9 @@ class MessageUnit
         MessageHeader *header;
         epid_t sepid;
 
+        // reply endpoint specified
+        bool reply_req;
+
       public:
 
         SendTransferEvent(MessageUnit *_msgUnit,
@@ -53,11 +56,13 @@ class MessageUnit
                           size_t size,
                           uint flags,
                           NocAddr dest,
-                          MessageHeader *_header)
+                          MessageHeader *_header,
+                          bool reply_req)
             : WriteTransferEvent(phys, size, flags, dest),
               msgUnit(_msgUnit),
               header(_header),
-              sepid(_sepid)
+              sepid(_sepid),
+              reply_req(reply_req)
         {}
 
         void transferStart() override;
@@ -176,6 +181,7 @@ class MessageUnit
     Stats::Histogram receivedBytes;
     Stats::Scalar wrongAct;
     Stats::Scalar noSpace;
+
 
 };
 

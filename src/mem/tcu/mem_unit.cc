@@ -153,10 +153,7 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
 
     DPRINTFS(Tcu, (&tcu), "mem_unit: startReadWithEP\n");
     // TODO: Add the correct encryption latency
-    // Include latency for packet type and address
-    // Latency for local encrypt and remote decrypt
-    // All delays are paid at the sender
-    // Cycles encDelay = tcu.dataEncryptionLatency + tcu.dataEncryptionLatency;
+    // Figure out the message structure when a read request is sent
     Cycles one_sided_delay = tcu.dataEncryptionLatency;
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
                        pkt,
@@ -325,11 +322,7 @@ MemoryUnit::startWriteWithEP(EpFile::EpCache &eps)
 void
 MemoryUnit::WriteTransferEvent::transferDone(TcuError result)
 {
-    if (result != TcuError::NONE)
-    {
-        tcu().scheduleCmdFinish(Cycles(1), result);
-    }
-    else
+    if(result == TcuError::NONE || result == TcuError::REPLY_REQ)
     {
         auto pkt = tcu().generateRequest(dest.getAddr(),
                                          size(),
@@ -345,12 +338,21 @@ MemoryUnit::WriteTransferEvent::transferDone(TcuError result)
         else
             pktType = Tcu::NocPacketType::WRITE_REQ;
 
-        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: size: %lu\n", size());
         // local encrypt and remote decrypt
-        // TODO: Add correct encryption latency
-        //Cycles encDelay = tcu().dataEncryptionLatency +tcu().dataEncryptionLatency;
-        Cycles one_sided_delay = tcu().totalEncryptionCost(pkt->getSize());
+        Addr data_size = pkt->getSize();
+        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: size: %lu\n", data_size);
+        if(result == TcuError::REPLY_REQ)
+        {
+            data_size += 32;
+        }
+        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: size: %lu\n", data_size);
+        Cycles one_sided_delay = tcu().totalEncryptionCost(data_size);
         tcu().sendNocRequest(pktType, pkt, delay + one_sided_delay);
+    }
+    else
+    {
+        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: scheduleCmdFinish\n");
+        tcu().scheduleCmdFinish(Cycles(1), result);
     }
 }
 

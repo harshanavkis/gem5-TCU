@@ -59,6 +59,7 @@ enum class TcuError
     MSG_UNALIGNED       = 23,
     TLB_MISS            = 24,
     TLB_FULL            = 25,
+    REPLY_REQ           = 26,
 };
 
 #endif // __MEM_TCU_ERROR_HH__

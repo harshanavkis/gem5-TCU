@@ -90,6 +90,6 @@ class Tcu(BaseTcu):
     transfer_to_mem_request_latency = Param.Cycles(1, "Number of cycles passed for requesting something from local memory, when transferring")
     transfer_to_noc_latency = Param.Cycles(3, "Number of cycles passed from collecting the data in the buffer until sending it to the NoC");
     noc_to_transfer_latency = Param.Cycles(3, "Number of cycles passed from receiving data from the NoC until starting to transfer it to the local memory");
-    data_encryption_latency = Param.Cycles(0, "Number of cycles required to encrypt or decrypt data in 16 byte blocks using AES-GCM")
+    data_encryption_latency = Param.Cycles(15, "Number of cycles required to encrypt or decrypt data in 16 byte blocks using AES-GCM")
     interconnect_transfer_latency = Param.Cycles(0, "Number of cycles to transfer data across the interconnect")
     parallel_pipelined = Param.Bool(False, "If true uses a parallel and pipelined encryption")
