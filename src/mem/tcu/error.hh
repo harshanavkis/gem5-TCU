@@ -60,6 +60,7 @@ enum class TcuError
     TLB_MISS            = 24,
     TLB_FULL            = 25,
     REPLY_REQ           = 26,
+    SIGN_VERIF_FAIL     = 28,
 };
 
 #endif // __MEM_TCU_ERROR_HH__

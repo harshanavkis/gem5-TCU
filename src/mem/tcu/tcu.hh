@@ -182,6 +182,43 @@ class Tcu : public BaseTcu
     // Calculate cost of pipelined encryption
     Cycles totalEncryptionCost(Addr size);
 
+    // Generate a random number used for nonces
+    void generateRandomNonce()
+    {
+        /*
+         * data.address: destination address of generated nonce
+         */
+        scheduleCmdFinish(rngGenLatency, TcuError::NONE);
+    }
+
+    // Generate signature using private key
+    void generateECDSASignature()
+    {
+        /*
+         * cmd.arg0: destination address for the signature
+         * data.address: source address of data
+         * data.size: size of source data
+         */
+        scheduleCmdFinish(signGenLatency, TcuError::NONE);
+    }
+
+    // Verify ECDSA signature using public key
+    void verifyECDSASignature()
+    {
+        /*
+         * data.address: message, 64 byte signature, public key
+         * data.size: message size
+         */
+        scheduleCmdFinish(signVerifLatency, TcuError::NONE);
+    }
+
+    // Start attestation
+    void startAttestation(const ExtCommand::Bits &cmd)
+    {
+        // attestComplete becomes true after signed nonce verification
+        scheduleExtCmdFinish(signVerifLatency, TcuError::NONE, 0);
+    }
+
   private:
 
     bool has_message(epid_t ep);
@@ -266,6 +303,15 @@ class Tcu : public BaseTcu
     const Cycles interconnectTransferLatency;
 
     const bool parallelPipelined;
+
+    const Cycles rngGenLatency;
+
+    const Cycles signGenLatency;
+
+    const Cycles signVerifLatency;
+
+    // This ICU has been attested
+    bool attestComplete;
 
     // NoC receives
     Stats::Scalar nocMsgRecvs;

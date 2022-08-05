@@ -79,7 +79,11 @@ Tcu::Tcu(const TcuParams &p)
     nocToTransferLatency(p.noc_to_transfer_latency),
     dataEncryptionLatency(p.data_encryption_latency),
     interconnectTransferLatency(p.interconnect_transfer_latency),
-    parallelPipelined(p.parallel_pipelined)
+    parallelPipelined(p.parallel_pipelined),
+    rngGenLatency(p.rng_gen_latency),
+    signGenLatency(p.sign_gen_latency),
+    signVerifLatency(p.sign_verif_latency),
+    attestComplete(false)
 {
     assert(p.buf_size >= maxNocPacketSize);
 
@@ -730,6 +734,10 @@ Tcu::printPacket(PacketPtr pkt) const
 Cycles
 Tcu::totalEncryptionCost(Addr size)
 {
+    if(!attestComplete)
+    {
+        return Cycles(0);
+    }
     if(dataEncryptionLatency == 0)
     {
         return Cycles(0);

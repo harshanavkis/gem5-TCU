@@ -109,6 +109,12 @@ struct CmdCommand
         FETCH_MSG       = 5,
         ACK_MSG         = 6,
         SLEEP           = 7,
+        // Used to generate nonces
+        GEN_RAND        = 8,
+        // Used for signing nonces
+        GEN_SIGN        = 9,
+        // Used to verify signatures
+        VER_SIGN        = 10,
     };
 
     BitUnion64(Bits)
@@ -172,8 +178,14 @@ struct ExtCommand
         IDLE            = 0,
         INV_EP          = 1,
         RESET           = 2,
+        ATTEST          = 3,
     };
 
+    /*
+     * For ATTEST if
+     * arg =0: check certificates of kernel, generate signed nonce
+     * arg =1: check signed nonce from kernel
+     */
     BitUnion64(Bits)
         Bitfield<64, 9> arg;
         Bitfield<8, 4> error;

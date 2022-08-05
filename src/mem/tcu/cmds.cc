@@ -45,6 +45,9 @@ static const char *cmdNames[] =
     "FETCH_MSG",
     "ACK_MSG",
     "SLEEP",
+    "GEN_RAND",
+    "GEN_SIGN",
+    "VER_SIGN",
 };
 
 static const char *privCmdNames[] =
@@ -64,6 +67,7 @@ static const char *extCmdNames[] =
     "IDLE",
     "INV_EP",
     "RESET",
+    "ATTEST",
 };
 
 #define COMMAND_NAME(names, idx)                         \
@@ -90,11 +94,11 @@ TcuCommands::TcuCommands(Tcu &_tcu)
       cmdIsRemote()
 {
     static_assert(sizeof(cmdNames) / sizeof(cmdNames[0]) ==
-        CmdCommand::SLEEP + 1, "cmdNames out of sync");
+        CmdCommand::VER_SIGN + 1, "cmdNames out of sync");
     static_assert(sizeof(privCmdNames) / sizeof(privCmdNames[0]) ==
         PrivCommand::FLUSH_CACHE + 1, "privCmdNames out of sync");
     static_assert(sizeof(extCmdNames) / sizeof(extCmdNames[0]) ==
-        ExtCommand::RESET + 1, "extCmdNames out of sync");
+        ExtCommand::ATTEST + 1, "extCmdNames out of sync");
 }
 
 const std::string
@@ -195,6 +199,15 @@ TcuCommands::executeCommand(PacketPtr pkt)
             break;
         case CmdCommand::SLEEP:
             tcu.startWaitEP(cmd);
+            break;
+        case CmdCommand::GEN_RAND:
+            tcu.generateRandomNonce();
+            break;
+        case CmdCommand::GEN_SIGN:
+            tcu.generateECDSASignature();
+            break;
+        case CmdCommand::VER_SIGN:
+            tcu.verifyECDSASignature();
             break;
         default:
             finishCommand(TcuError::UNKNOWN_CMD);
@@ -459,6 +472,8 @@ TcuCommands::executeExtCommand(PacketPtr pkt)
             scheduleExtCmdFinish(delay, TcuError::NONE, 0);
             break;
         }
+        case ExtCommand::ATTEST:
+            tcu.startAttestation(cmd);
         default:
             scheduleExtCmdFinish(Cycles(1), TcuError::UNKNOWN_CMD, 0);
             break;

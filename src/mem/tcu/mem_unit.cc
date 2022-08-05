@@ -154,7 +154,11 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
     DPRINTFS(Tcu, (&tcu), "mem_unit: startReadWithEP\n");
     // TODO: Add the correct encryption latency
     // Figure out the message structure when a read request is sent
-    Cycles one_sided_delay = tcu.dataEncryptionLatency;
+    Cycles one_sided_delay;
+    if(tcu.attestComplete)
+        one_sided_delay = tcu.dataEncryptionLatency;
+    else
+        one_sided_delay = Cycles(0);
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
                        pkt,
                        tcu.commandToNocRequestLatency + one_sided_delay + one_sided_delay);
@@ -451,9 +455,7 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
         state->result = result;
 
         // Local encrypt and remote decrypt
-        // TODO: Add correct encryption latencies
         DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent::transferDone: size: %u\n", pkt->getSize());
-        // Cycles encDelay = tcu().dataEncryptionLatency + tcu().dataEncryptionLatency;
         Cycles one_sided_delay = tcu().totalEncryptionCost(pkt->getSize());
         Cycles delay = tcu().transferToNocLatency + one_sided_delay;
         tcu().schedNocResponse(pkt, tcu().clockEdge(delay));

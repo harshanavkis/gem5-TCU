@@ -53,7 +53,7 @@ class BaseTcu(ClockedObject):
 
     caches = VectorParam.Cache([], "The caches that need to be flushed/invalidated")
 
-    mmio_region = Param.AddrRange(AddrRange(0xF0000000, 0xF0008000), "MMIO region of the TCU")
+    mmio_region = Param.AddrRange(AddrRange(0xF0000000, 0xF0006FFF), "MMIO region of the TCU")
 
     tile_id = Param.Unsigned("ID of the tile this TCU belongs to")
 
@@ -93,3 +93,6 @@ class Tcu(BaseTcu):
     data_encryption_latency = Param.Cycles(15, "Number of cycles required to encrypt or decrypt data in 16 byte blocks using AES-GCM")
     interconnect_transfer_latency = Param.Cycles(0, "Number of cycles to transfer data across the interconnect")
     parallel_pipelined = Param.Bool(False, "If true uses a parallel and pipelined encryption")
+    rng_gen_latency = Param.Cycles(0, "Number of cycles to generate random 128 bit nonces")
+    sign_gen_latency = Param.Cycles(0, "Number of cycles to generate signature using private key")
+    sign_verif_latency = Param.Cycles(0, "Number of cycles to verify signature using public key")
