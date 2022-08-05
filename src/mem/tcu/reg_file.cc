@@ -392,9 +392,10 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
                 set(reg, data[offset / sizeof(reg_t)], access);
             }
         }
-        else if (regAddr >= TcuTlb::PAGE_SIZE * 2)
+        else if (regAddr >= TcuTlb::PAGE_SIZE * 5)
         {
-            Addr reqAddr = regAddr - TcuTlb::PAGE_SIZE * 2;
+            Addr reqAddr = regAddr - TcuTlb::PAGE_SIZE * 5;
+            DPRINTF(Tcu, "Accessing priviledged region in Tcu\n");
 
             if (reqAddr < sizeof(reg_t) * numPrivRegs)
             {
@@ -413,6 +414,16 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
                     set(reg, data[offset / sizeof(reg_t)], access);
                 }
             }
+        }
+        else if (regAddr >= TcuTlb::PAGE_SIZE * 4)
+        {
+            // Attestation data
+            DPRINTF(Tcu, "Accessing attestation data in Tcu\n");
+        }
+        else if (regAddr >= TcuTlb::PAGE_SIZE * 2)
+        {
+            // ICU keys
+            DPRINTF(Tcu, "Accessing ICU keys in Tcu\n");
         }
         // unprivileged register
         else if (regAddr < sizeof(reg_t) * (numExtRegs + numUnprivRegs))
@@ -490,5 +501,5 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
 Addr
 RegFile::getSize() const
 {
-    return TcuTlb::PAGE_SIZE * 2 + sizeof(reg_t) * numPrivRegs;
+    return TcuTlb::PAGE_SIZE * 5 + sizeof(reg_t) * numPrivRegs;
 }
