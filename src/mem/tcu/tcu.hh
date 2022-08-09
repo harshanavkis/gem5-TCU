@@ -182,21 +182,12 @@ class Tcu : public BaseTcu
     // Calculate cost of pipelined encryption
     Cycles totalEncryptionCost(Addr size);
 
-    // Generate a random number used for nonces
-    void generateRandomNonce()
-    {
-        /*
-         * data.address: destination address of generated nonce
-         */
-        scheduleCmdFinish(rngGenLatency, TcuError::NONE);
-    }
-
     // Generate signature using private key
     void generateECDSASignature()
     {
         /*
          * cmd.arg0: destination address for the signature
-         * data.address: source address of data
+         * data.address: source address of data (key + data combination)
          * data.size: size of source data
          */
         scheduleCmdFinish(signGenLatency, TcuError::NONE);

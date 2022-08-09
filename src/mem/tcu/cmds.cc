@@ -201,7 +201,7 @@ TcuCommands::executeCommand(PacketPtr pkt)
             tcu.startWaitEP(cmd);
             break;
         case CmdCommand::GEN_RAND:
-            tcu.generateRandomNonce();
+            tcu.memUnit->generateRandomNonce(cmd);
             break;
         case CmdCommand::GEN_SIGN:
             tcu.generateECDSASignature();

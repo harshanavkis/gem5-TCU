@@ -125,6 +125,11 @@ class MemoryUnit
     void regStats();
 
     /**
+     * Generates a 128 bit random number
+     */
+    void generateRandomNonce(const CmdCommand::Bits& cmd);
+
+    /**
      * Starts a read -> NoC request
      */
     void startRead(const CmdCommand::Bits& cmd);

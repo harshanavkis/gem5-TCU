@@ -165,6 +165,22 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
 }
 
 void
+MemoryUnit::generateRandomNonce(const CmdCommand::Bits& cmd)
+{
+    /*
+     * data.address: destination address of generated nonce
+     */
+    const CmdData::Bits data = tcu.regs().getData();
+    NocAddr phys(data.addr);
+
+    // dummy 128 bit nonce
+    uint8_t *nonce = new uint8_t[16] {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32};
+
+    auto xfer = new LocalWriteTransferEvent(phys, nonce, 16, 0);
+    tcu.startTransfer(xfer, tcu.rngGenLatency);
+}
+
+void
 MemoryUnit::LocalWriteTransferEvent::transferStart()
 {
     memcpy(data(), tmp, tmpSize);
