@@ -130,6 +130,11 @@ class MemoryUnit
     void generateRandomNonce(const CmdCommand::Bits& cmd);
 
     /**
+     * Generates ecdsa signature using private key
+     */
+    void generateECDSASignature(const CmdCommand::Bits& cmd);
+
+    /**
      * Starts a read -> NoC request
      */
     void startRead(const CmdCommand::Bits& cmd);

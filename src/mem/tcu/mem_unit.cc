@@ -181,6 +181,29 @@ MemoryUnit::generateRandomNonce(const CmdCommand::Bits& cmd)
 }
 
 void
+MemoryUnit::generateECDSASignature(const CmdCommand::Bits& cmd)
+{
+    /*
+     * cmd.arg0: destination address for the signature
+     * data.address: source address of data (key + data combination)
+     * data.size: size of source data
+     */
+    NocAddr phys(cmd.arg0);
+    
+    // dummy signature
+    uint8_t *signature = new uint8_t[64];
+    for(int i=0; i<64; i++)
+    {
+        signature[i] = 32;
+    }
+
+    // TODO: Maybe split this into a local read and write event to read
+    // key and data
+    auto xfer = new LocalWriteTransferEvent(phys, signature, 64, 0);
+    tcu.startTransfer(xfer, tcu.signGenLatency);
+}
+
+void
 MemoryUnit::LocalWriteTransferEvent::transferStart()
 {
     memcpy(data(), tmp, tmpSize);

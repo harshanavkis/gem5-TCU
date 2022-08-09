@@ -204,7 +204,7 @@ TcuCommands::executeCommand(PacketPtr pkt)
             tcu.memUnit->generateRandomNonce(cmd);
             break;
         case CmdCommand::GEN_SIGN:
-            tcu.generateECDSASignature();
+            tcu.memUnit->generateECDSASignature(cmd);
             break;
         case CmdCommand::VER_SIGN:
             tcu.verifyECDSASignature();

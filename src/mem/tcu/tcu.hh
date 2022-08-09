@@ -182,17 +182,6 @@ class Tcu : public BaseTcu
     // Calculate cost of pipelined encryption
     Cycles totalEncryptionCost(Addr size);
 
-    // Generate signature using private key
-    void generateECDSASignature()
-    {
-        /*
-         * cmd.arg0: destination address for the signature
-         * data.address: source address of data (key + data combination)
-         * data.size: size of source data
-         */
-        scheduleCmdFinish(signGenLatency, TcuError::NONE);
-    }
-
     // Verify ECDSA signature using public key
     void verifyECDSASignature()
     {
@@ -200,6 +189,8 @@ class Tcu : public BaseTcu
          * data.address: message, 64 byte signature, public key
          * data.size: message size
          */
+
+        // TODO: Maybe handle errors
         scheduleCmdFinish(signVerifLatency, TcuError::NONE);
     }
 
