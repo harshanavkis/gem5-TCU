@@ -194,13 +194,6 @@ class Tcu : public BaseTcu
         scheduleCmdFinish(signVerifLatency, TcuError::NONE);
     }
 
-    // Start attestation
-    void startAttestation(const ExtCommand::Bits &cmd)
-    {
-        // attestComplete becomes true after signed nonce verification
-        scheduleExtCmdFinish(signVerifLatency, TcuError::NONE, 0);
-    }
-
   private:
 
     bool has_message(epid_t ep);
@@ -294,6 +287,12 @@ class Tcu : public BaseTcu
 
     // This ICU has been attested
     bool attestComplete;
+
+    // Attestation chain length
+    uint64_t certChainLen;
+
+    // Reply endpoint to send attestation ready message
+    uint16_t attestationEp;
 
     // NoC receives
     Stats::Scalar nocMsgRecvs;

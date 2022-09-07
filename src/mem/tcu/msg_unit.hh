@@ -39,6 +39,36 @@ class MessageUnit
 {
   public:
 
+    class AttestationEvent : public MemoryUnit::WriteTransferEvent
+    {
+        MessageUnit *msgUnit;
+        MessageHeader *header;
+        epid_t sepid;
+
+        // reply endpoint specified
+        bool reply_req;
+
+      public:
+
+        AttestationEvent(MessageUnit *_msgUnit,
+                          epid_t _sepid,
+                          NocAddr phys,
+                          size_t size,
+                          uint flags,
+                          NocAddr dest,
+                          MessageHeader *_header,
+                          bool reply_req)
+            : WriteTransferEvent(phys, size, flags, dest),
+              msgUnit(_msgUnit),
+              header(_header),
+              sepid(_sepid),
+              reply_req(reply_req)
+        {}
+
+        void transferStart() override;
+        void transferDone(TcuError result) override;
+    };
+
     class SendTransferEvent : public MemoryUnit::WriteTransferEvent
     {
         MessageUnit *msgUnit;
@@ -137,6 +167,20 @@ class MessageUnit
      * Received a message from NoC -> Mem request
      */
     void recvFromNoc(PacketPtr pkt);
+
+    /**
+     * Start the attestation protocol
+     */
+    void startAttestation(const ExtCommand::Bits &cmd);
+
+    void attestWithEP(EpFile::EpCache &eps);
+
+    /**
+     * Start attestation key generation
+     */
+    void startAttKeyGen(const ExtCommand::Bits &cmd);
+
+    void attKeyGenWithEP(EpFile::EpCache &eps);
 
   private:
 

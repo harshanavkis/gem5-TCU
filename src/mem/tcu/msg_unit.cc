@@ -403,6 +403,31 @@ MessageUnit::SendTransferEvent::transferDone(TcuError result)
     msgUnit->cmdEps.onFinished([](EpFile::EpCache &) {});
 }
 
+void
+MessageUnit::AttestationEvent::transferStart()
+{
+    assert(header);
+
+    // note that this causes no additional delay because we assume that we
+    // create the header directly in the buffer (and if there is no one
+    // free we just wait until there is)
+    memcpy(data(), header, sizeof(*header));
+
+    // for the header
+    size(sizeof(*header));
+
+    delete header;
+    header = nullptr;
+}
+
+void
+MessageUnit::AttestationEvent::transferDone(TcuError result)
+{
+    MemoryUnit::WriteTransferEvent::transferDone(result);
+
+    msgUnit->extCmdEps.onFinished([](EpFile::EpCache &) {});
+}
+
 bool
 MessageUnit::finishMsgSend(TcuError result)
 {
@@ -488,6 +513,122 @@ MessageUnit::invalidateWithEP(EpFile::EpCache &eps)
     eps.onFinished([this, unreadMask](EpFile::EpCache &) {
         tcu.scheduleExtCmdFinish(Cycles(1), TcuError::NONE, unreadMask);
     });
+}
+
+void MessageUnit::startAttestation(const ExtCommand::Bits &cmd)
+{
+    DPRINTFS(Tcu, (&tcu), "startAttestation\n");
+    extCmdEps.addEp(tcu.attestationEp);
+    extCmdEps.onFetched(std::bind(&MessageUnit::attestWithEP,
+                                  this, std::placeholders::_1));
+}
+
+void
+MessageUnit::attestWithEP(EpFile::EpCache &eps)
+{
+    DPRINTFS(Tcu, (&tcu), "attestWithEP\n");
+    ExtCommand::Bits cmd = tcu.regs().get(ExtReg::EXT_CMD);
+    DPRINTFS(Tcu, (&tcu), "attestWithEP: get EXT_CMD\n");
+    Ep ep = eps.getEp(tcu.attestationEp);
+    const SendEp &sep = ep.send;
+    DPRINTFS(Tcu, (&tcu), "attestWithEP: SendEp\n");
+
+    NocAddr phys(0);
+
+    NocAddr nocAddr(sep.r1.tgtTile, sep.r1.tgtEp);
+    // NocAddr nocAddr(0, 7);
+    uint flags = XferUnit::MESSAGE;
+
+    // build header
+    MessageHeader* header = new MessageHeader;
+    header->flags = 0; // normal message
+
+    header->senderTileId   = tcu.tileId;
+    header->senderEpId   = sep.r0.curCrd == Tcu::CREDITS_UNLIM
+                           ? Tcu::INVALID_EP_ID
+                           : tcu.attestationEp;
+    header->replyEpId    = Tcu::INVALID_EP_ID;
+    header->length       = 0;
+    header->label        = sep.r2.label;
+    header->replyLabel   = 0;
+    header->replySize    = 0;
+
+    // start the transfer of the payload
+    auto *ev = new AttestationEvent(
+        this, sep.id, phys, 0, flags, nocAddr, header, false);
+    DPRINTFS(Tcu, (&tcu), "attestWithEP: new AttestationEvent\n");
+
+    DPRINTFS(Tcu, (&tcu), "attestWithEP: Certificate generation\n");
+    tcu.startTransfer(ev, tcu.signVerifLatency);
+
+    DPRINTFS(Tcu, (&tcu), "attestWithEP: tgtEp: %u\n", sep.r1.tgtEp);
+
+
+    eps.updateEp(sep);
+
+    // tcu.attestComplete is true after signed nonce verification and key exchange
+    tcu.scheduleExtCmdFinish(Cycles(0), TcuError::NONE, 0);
+
+    eps.setAutoFinish(false);
+}
+
+void MessageUnit::startAttKeyGen(const ExtCommand::Bits &cmd)
+{
+    DPRINTFS(Tcu, (&tcu), "startAttKeyGen\n");
+    extCmdEps.addEp(tcu.attestationEp);
+    DPRINTFS(Tcu, (&tcu), "startAttKeyGen: EP:%lu\n", tcu.attestationEp);
+    extCmdEps.onFetched(std::bind(&MessageUnit::attKeyGenWithEP,
+                                  this, std::placeholders::_1));
+}
+
+void
+MessageUnit::attKeyGenWithEP(EpFile::EpCache &eps)
+{
+    DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP\n");
+    ExtCommand::Bits cmd = tcu.regs().get(ExtReg::EXT_CMD);
+    DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP: get EXT_CMD\n");
+    Ep ep = eps.getEp(tcu.attestationEp);
+    const SendEp &sep = ep.send;
+    DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP: SendEp\n");
+
+    NocAddr phys(0);
+
+    NocAddr nocAddr(sep.r1.tgtTile, sep.r1.tgtEp);
+    DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP: tgtEp: %u\n", sep.r1.tgtEp);
+    // NocAddr nocAddr(0, 7);
+    uint flags = XferUnit::MESSAGE;
+
+    // build header
+    MessageHeader* header = new MessageHeader;
+    header->flags = 0; // normal message
+
+    header->senderTileId   = tcu.tileId;
+    header->senderEpId   = sep.r0.curCrd == Tcu::CREDITS_UNLIM
+                           ? Tcu::INVALID_EP_ID
+                           : tcu.attestationEp;
+    header->replyEpId    = Tcu::INVALID_EP_ID;
+    header->length       = 0;
+    header->label        = sep.r2.label;
+    header->replyLabel   = 0;
+    header->replySize    = 0;
+
+    // start the transfer of the payload
+    auto *ev = new AttestationEvent(
+        this, sep.id, phys, 0, flags, nocAddr, header, false);
+    DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP: new AttestationEvent\n");
+
+    tcu.attestComplete = true;
+
+    DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP: Key generation\n");
+    // TODO: Add key generation latency to signVerifLatency
+    tcu.startTransfer(ev, tcu.signVerifLatency);
+
+    eps.updateEp(sep);
+
+    // tcu.attestComplete is true after signed nonce verification and key exchange
+    tcu.scheduleExtCmdFinish(Cycles(0), TcuError::NONE, 0);
+
+    eps.setAutoFinish(false);
 }
 
 void
@@ -883,3 +1024,4 @@ MessageUnit::ReceiveTransferEvent::transferDone(TcuError result)
         delete &eps;
     });
 }
+

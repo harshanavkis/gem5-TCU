@@ -419,6 +419,52 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
         {
             // Attestation data
             DPRINTF(Tcu, "Accessing attestation data in Tcu\n");
+            if (pkt->isRead())
+            {
+                if (regAddr < (TcuTlb::PAGE_SIZE * 4) + 16)
+                {
+                    // Read ICU's challenge nonce
+                    data[offset / sizeof(reg_t)] = 5;
+                }
+                else if (regAddr < (TcuTlb::PAGE_SIZE * 4) + 80)
+                {
+                    // Read ICU signed kernel challenge nonce
+                    data[offset / sizeof(reg_t)] = 6;
+                }
+                else
+                {
+                    // Read ICU cert chain from provider
+                    data[offset / sizeof(reg_t)] = 7;
+                }
+            }
+
+            if (regAddr < (TcuTlb::PAGE_SIZE * 4) + 16)
+            {
+                // Write 16 byte nonce
+                DPRINTF(Tcu, "Set nonce\n");
+            }
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 24)
+            {
+                // Certificate chain length
+                tcu.certChainLen = data[offset];
+                DPRINTF(Tcu, "Set cert chain length: %lu\n", tcu.certChainLen);
+            }
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 32)
+            {
+                // Endpoint to send attestation ready message
+                tcu.attestationEp = data[offset];
+                DPRINTF(Tcu, "Set attestation reply ep: %lu\n", tcu.attestationEp);
+            }
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 544)
+            {
+                // Certificate chain
+                DPRINTF(Tcu, "Set certificate chain\n");
+            }
+            else
+            {
+                // Write signed challenge from kernel
+                DPRINTF(Tcu, "Write signed challenge\n");
+            }
         }
         else if (regAddr >= TcuTlb::PAGE_SIZE * 2)
         {
@@ -453,6 +499,8 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
             {
                 epid_t epId = epAddr / (sizeof(reg_t) * numEpRegs);
                 unsigned regNumber = (epAddr / sizeof(reg_t)) % numEpRegs;
+
+                DPRINTF(Tcu, "Writing to endpoint: %lu\n", epId);
 
                 if (lastEp != epId)
                 {

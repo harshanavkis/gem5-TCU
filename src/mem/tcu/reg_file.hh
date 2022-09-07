@@ -179,6 +179,7 @@ struct ExtCommand
         INV_EP          = 1,
         RESET           = 2,
         ATTEST          = 3,
+        GEN_KEY         = 4,
     };
 
     /*

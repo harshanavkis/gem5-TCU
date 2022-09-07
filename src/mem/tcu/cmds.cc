@@ -68,6 +68,7 @@ static const char *extCmdNames[] =
     "INV_EP",
     "RESET",
     "ATTEST",
+    "GEN_KEY",
 };
 
 #define COMMAND_NAME(names, idx)                         \
@@ -98,7 +99,7 @@ TcuCommands::TcuCommands(Tcu &_tcu)
     static_assert(sizeof(privCmdNames) / sizeof(privCmdNames[0]) ==
         PrivCommand::FLUSH_CACHE + 1, "privCmdNames out of sync");
     static_assert(sizeof(extCmdNames) / sizeof(extCmdNames[0]) ==
-        ExtCommand::ATTEST + 1, "extCmdNames out of sync");
+        ExtCommand::GEN_KEY + 1, "extCmdNames out of sync");
 }
 
 const std::string
@@ -473,7 +474,13 @@ TcuCommands::executeExtCommand(PacketPtr pkt)
             break;
         }
         case ExtCommand::ATTEST:
-            tcu.startAttestation(cmd);
+            DPRINTF(Tcu, "ExtCommand::ATTEST\n");
+            tcu.msgUnit->startAttestation(cmd);
+            break;
+        case ExtCommand::GEN_KEY:
+            DPRINTF(Tcu, "ExtCommand::GEN_KEY\n");
+            tcu.msgUnit->startAttKeyGen(cmd);
+            break;
         default:
             scheduleExtCmdFinish(Cycles(1), TcuError::UNKNOWN_CMD, 0);
             break;
