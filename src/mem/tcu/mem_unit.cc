@@ -386,9 +386,9 @@ MemoryUnit::WriteTransferEvent::transferDone(TcuError result)
         DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: size: %lu\n", data_size);
         if(result == TcuError::REPLY_REQ)
         {
+            DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: REPLY_REQ");
             data_size += 32;
         }
-        DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: size: %lu\n", data_size);
         Cycles one_sided_delay = tcu().totalEncryptionCost(data_size);
         tcu().sendNocRequest(pktType, pkt, delay + one_sided_delay);
     }
@@ -486,8 +486,20 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
     {
         pkt->makeResponse();
 
+        Cycles one_sided_delay;
+
         if (pkt->isRead())
+        {
+            DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent: transferDone: pkt isRead\n");
+            one_sided_delay = tcu().totalEncryptionCost(size());
             memcpy(pkt->getPtr<uint8_t>(), data(), size());
+        }
+        else
+        {
+            // TODO: Figure out header length
+            one_sided_delay = tcu().totalEncryptionCost(sizeof(MessageHeader));
+            one_sided_delay = Cycles(0);
+        }
 
         // set result
         auto state = dynamic_cast<Tcu::NocSenderState*>(pkt->senderState);
@@ -495,7 +507,6 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
 
         // Local encrypt and remote decrypt
         DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent::transferDone: size: %u\n", pkt->getSize());
-        Cycles one_sided_delay = tcu().totalEncryptionCost(pkt->getSize());
         Cycles delay = tcu().transferToNocLatency + one_sided_delay;
         tcu().schedNocResponse(pkt, tcu().clockEdge(delay));
     }
