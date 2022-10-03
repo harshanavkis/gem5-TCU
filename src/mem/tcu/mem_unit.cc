@@ -498,7 +498,6 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
         {
             // TODO: Figure out header length
             one_sided_delay = tcu().totalEncryptionCost(sizeof(MessageHeader));
-            one_sided_delay = Cycles(0);
         }
 
         // set result
