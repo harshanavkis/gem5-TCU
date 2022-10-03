@@ -133,6 +133,30 @@ def getOptions():
                       metavar="T",
                       help="Stop after T ticks")
 
+    parser.add_option("--encr-latency", action="store", type="int",
+            default=0,
+            help="Number of cycles to encrypt/decrypt 16 byte data blocks in AES-GCM")
+
+    parser.add_option("--int-transfer-latency", action="store", type="int",
+            default=0,
+            help="Number of cycles to transfer data across the interconnect")
+
+    parser.add_option("--par-pipe", action="store", type="int",
+            default=0,
+            help="If 1 uses a parallel and pipelined AES-GCM")
+
+    parser.add_option("--rng-latency", action="store", type="int",
+            default=0,
+            help="Number of cycles to generate random numbers")
+
+    parser.add_option("--sign-latency", action="store", type="int",
+            default=0,
+            help="Number of cycles to generate ECDSA signature")
+
+    parser.add_option("--sign-ver-latency", action="store", type="int",
+            default=0,
+            help="Number of cycles to verify ECDSA signature")
+
     Options.addFSOptions(parser)
 
     (options, args) = parser.parse_args()
@@ -243,7 +267,15 @@ def createTile(noc, options, no, systemType, l1size, l2size, spmsize,
         tile.xbar = L2XBar()
     tile.xbar.point_of_coherency = True
 
-    tile.tcu = Tcu(max_noc_packet_size='2kB', buf_size='2kB')
+    tile.tcu = Tcu(
+        max_noc_packet_size='2kB',
+        buf_size='2kB',
+        data_encryption_latency=options.encr_latency,
+        interconnect_transfer_latency=options.int_transfer_latency,
+        parallel_pipelined= (True if options.par_pipe == 1 else False),
+        rng_gen_latency=options.rng_latency,
+        sign_gen_latency=options.sign_latency,
+        sign_verif_latency=options.sign_ver_latency)
     tile.tcu.tile_id = no
 
     tile.tcu.num_endpoints = epCount
