@@ -156,7 +156,7 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
     // Figure out the message structure when a read request is sent
     Cycles one_sided_delay;
     if(tcu.attestComplete)
-        one_sided_delay = tcu.dataEncryptionLatency;
+        one_sided_delay = tcu.totalEncryptionCost(sizeof(MessageHeader));
     else
         one_sided_delay = Cycles(0);
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
@@ -386,7 +386,7 @@ MemoryUnit::WriteTransferEvent::transferDone(TcuError result)
         DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: size: %lu\n", data_size);
         if(result == TcuError::REPLY_REQ)
         {
-            DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: REPLY_REQ");
+            DPRINTFS(Tcu, (&tcu()), "mem_unit: WriteTransferEvent::transferDone: REPLY_REQ\n");
             data_size += 32;
         }
         Cycles one_sided_delay = tcu().totalEncryptionCost(data_size);
