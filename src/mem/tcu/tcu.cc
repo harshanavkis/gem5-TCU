@@ -697,7 +697,7 @@ Tcu::forwardRequestToRegFile(PacketPtr pkt, bool isCpuRequest)
             if(result & RegFile::READ_EP_REGION)
             {
                 // Local encryption and remote decryption
-                Cycles one_side_delay = totalEncryptionCost(pkt->getSize());
+                Cycles one_side_delay = totalEncryptionCost(pkt->getSize(), true);
                 encDelay = one_side_delay;
             }
             schedNocResponse(pkt, clockEdge(transportDelay + registerAccessLatency + encDelay));
@@ -735,16 +735,23 @@ Tcu::printPacket(PacketPtr pkt) const
 }
 
 Cycles
-Tcu::totalEncryptionCost(Addr size)
+Tcu::totalEncryptionCost(Addr size, bool sender)
 {
+    Cycles sender_cycles = Cycles(0);
+    if(sender) {
+        sender_cycles += ticksToCycles(interconnectTransferLatency);
+    }
+
     if(!attestComplete)
     {
-        return Cycles(0) + ticksToCycles(interconnectTransferLatency);
+        return Cycles(0) + sender_cycles;
     }
+
     if(dataEncryptionLatency == 0)
     {
-        return Cycles(0) + ticksToCycles(interconnectTransferLatency);
+        return Cycles(0) + sender_cycles;
     }
+
     // If cost for encrypting a single 16B block is n
     // cycles, then in a fully pipelined AES encryption engine
     // the first encrypted block would appear after n cycles, the 
@@ -776,5 +783,5 @@ Tcu::totalEncryptionCost(Addr size)
 
     DPRINTFS(Tcu, this, "num_blocks: %lu, Total encryption cost:%lu\n", num_blocks, total_encryption_cost);
 
-    return (total_encryption_cost) + ticksToCycles(interconnectTransferLatency);
+    return (total_encryption_cost) + sender_cycles;
 }

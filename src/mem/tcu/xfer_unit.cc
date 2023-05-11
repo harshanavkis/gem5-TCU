@@ -312,6 +312,8 @@ XferUnit::startTransfer(TransferEvent *event, Cycles delay)
     else
         bytesWritten.sample(event->remaining);
 
+    DPRINTFS(Tcu, (&tcu), "XferUnit::startTransfer delay: %lu", Cycles(delay + 1));
+
     tcu.schedule(event, tcu.clockEdge(Cycles(delay + 1)));
 
     // finish the noc request now to make the port unbusy

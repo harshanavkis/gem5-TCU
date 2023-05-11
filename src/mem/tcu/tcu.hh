@@ -180,7 +180,7 @@ class Tcu : public BaseTcu
     void printPacket(PacketPtr pkt) const;
 
     // Calculate cost of pipelined encryption
-    Cycles totalEncryptionCost(Addr size);
+    Cycles totalEncryptionCost(Addr size, bool sender);
 
     // Verify ECDSA signature using public key
     void verifyECDSASignature()
