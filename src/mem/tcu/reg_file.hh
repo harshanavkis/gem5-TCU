@@ -115,6 +115,8 @@ struct CmdCommand
         GEN_SIGN        = 9,
         // Used to verify signatures
         VER_SIGN        = 10,
+        // Tell local ICU that attestation is complete
+        ATT_DONE        = 11,
     };
 
     BitUnion64(Bits)

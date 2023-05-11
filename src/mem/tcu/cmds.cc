@@ -48,6 +48,7 @@ static const char *cmdNames[] =
     "GEN_RAND",
     "GEN_SIGN",
     "VER_SIGN",
+    "ATT_DONE",
 };
 
 static const char *privCmdNames[] =
@@ -95,7 +96,7 @@ TcuCommands::TcuCommands(Tcu &_tcu)
       cmdIsRemote()
 {
     static_assert(sizeof(cmdNames) / sizeof(cmdNames[0]) ==
-        CmdCommand::VER_SIGN + 1, "cmdNames out of sync");
+        CmdCommand::ATT_DONE + 1, "cmdNames out of sync");
     static_assert(sizeof(privCmdNames) / sizeof(privCmdNames[0]) ==
         PrivCommand::FLUSH_CACHE + 1, "privCmdNames out of sync");
     static_assert(sizeof(extCmdNames) / sizeof(extCmdNames[0]) ==
@@ -210,6 +211,11 @@ TcuCommands::executeCommand(PacketPtr pkt)
         case CmdCommand::VER_SIGN:
             tcu.verifyECDSASignature();
             break;
+        case CmdCommand::ATT_DONE:
+            DPRINTF(Tcu, "ATT_DONE\n");
+            tcu.attestComplete = true;
+            finishCommand(TcuError::NONE);
+            return;
         default:
             finishCommand(TcuError::UNKNOWN_CMD);
             return;

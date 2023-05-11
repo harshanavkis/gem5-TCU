@@ -161,7 +161,7 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
         one_sided_delay = Cycles(0);
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
                        pkt,
-                       tcu.commandToNocRequestLatency + one_sided_delay + one_sided_delay);
+                       tcu.commandToNocRequestLatency + one_sided_delay);
 }
 
 void
@@ -176,6 +176,7 @@ MemoryUnit::generateRandomNonce(const CmdCommand::Bits& cmd)
     // dummy 128 bit nonce
     uint8_t *nonce = new uint8_t[16] {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32};
 
+    DPRINTFS(Tcu, (&tcu), "generateRandomNonce: %lu\n", tcu.rngGenLatency);
     auto xfer = new LocalWriteTransferEvent(phys, nonce, 16, 0);
     tcu.startTransfer(xfer, tcu.rngGenLatency);
 }
@@ -183,6 +184,7 @@ MemoryUnit::generateRandomNonce(const CmdCommand::Bits& cmd)
 void
 MemoryUnit::generateECDSASignature(const CmdCommand::Bits& cmd)
 {
+    DPRINTFS(Tcu, (&tcu), "generateECDSASignature\n");
     /*
      * cmd.arg0: destination address for the signature
      * data.address: source address of data (key + data combination)
@@ -199,6 +201,7 @@ MemoryUnit::generateECDSASignature(const CmdCommand::Bits& cmd)
 
     // TODO: Maybe split this into a local read and write event to read
     // key and data
+    DPRINTFS(Tcu, (&tcu), "generateECDSASignature: %lu\n", tcu.signGenLatency);
     auto xfer = new LocalWriteTransferEvent(phys, signature, 64, 0);
     tcu.startTransfer(xfer, tcu.signGenLatency);
 }
@@ -490,7 +493,7 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
 
         if (pkt->isRead())
         {
-            DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent: transferDone: pkt isRead\n");
+            // DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent: transferDone: pkt isRead\n");
             one_sided_delay = tcu().totalEncryptionCost(size());
             memcpy(pkt->getPtr<uint8_t>(), data(), size());
         }
@@ -505,7 +508,7 @@ MemoryUnit::ReceiveTransferEvent::transferDone(TcuError result)
         state->result = result;
 
         // Local encrypt and remote decrypt
-        DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent::transferDone: size: %u\n", pkt->getSize());
+        // DPRINTFS(Tcu, (&tcu()), "mem_unit: ReceiveTransferEvent::transferDone: size: %u\n", pkt->getSize());
         Cycles delay = tcu().transferToNocLatency + one_sided_delay;
         tcu().schedNocResponse(pkt, tcu().clockEdge(delay));
     }

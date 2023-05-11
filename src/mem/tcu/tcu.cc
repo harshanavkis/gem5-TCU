@@ -80,9 +80,12 @@ Tcu::Tcu(const TcuParams &p)
     dataEncryptionLatency(p.data_encryption_latency),
     interconnectTransferLatency(p.interconnect_transfer_latency),
     parallelPipelined(p.parallel_pipelined),
-    rngGenLatency(p.rng_gen_latency),
-    signGenLatency(p.sign_gen_latency),
-    signVerifLatency(p.sign_verif_latency),
+    //rngGenLatency(p.rng_gen_latency),
+    //signGenLatency(p.sign_gen_latency),
+    //signVerifLatency(p.sign_verif_latency),
+    rngGenLatency(Cycles(500)),
+    signGenLatency(Cycles(762000)),
+    signVerifLatency(482000),
     attestComplete(false)
 {
     assert(p.buf_size >= maxNocPacketSize);
@@ -736,11 +739,11 @@ Tcu::totalEncryptionCost(Addr size)
 {
     if(!attestComplete)
     {
-        return Cycles(0);
+        return Cycles(0) + interconnectTransferLatency;
     }
     if(dataEncryptionLatency == 0)
     {
-        return Cycles(0);
+        return Cycles(0) + interconnectTransferLatency;
     }
     // If cost for encrypting a single 16B block is n
     // cycles, then in a fully pipelined AES encryption engine
@@ -764,14 +767,14 @@ Tcu::totalEncryptionCost(Addr size)
     if(!parallelPipelined)
     {
         Cycles one_sided_delay = dataEncryptionLatency + Cycles(num_blocks - 1);
-        total_encryption_cost = one_sided_delay + one_sided_delay + interconnectTransferLatency;
+        total_encryption_cost = one_sided_delay + one_sided_delay;
     }
     else
     {
-        total_encryption_cost = dataEncryptionLatency + Cycles(num_blocks - 1) + interconnectTransferLatency + dataEncryptionLatency;
+        total_encryption_cost = dataEncryptionLatency + Cycles(num_blocks - 1) + dataEncryptionLatency;
     }
 
     DPRINTFS(Tcu, this, "num_blocks: %lu, Total encryption cost:%lu\n", num_blocks, total_encryption_cost);
 
-    return total_encryption_cost;
+    return (total_encryption_cost) + interconnectTransferLatency;
 }

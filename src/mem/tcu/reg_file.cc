@@ -395,7 +395,7 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
         else if (regAddr >= TcuTlb::PAGE_SIZE * 5)
         {
             Addr reqAddr = regAddr - TcuTlb::PAGE_SIZE * 5;
-            DPRINTF(Tcu, "Accessing priviledged region in Tcu\n");
+            // DPRINTF(Tcu, "Accessing priviledged region in Tcu\n");
 
             if (reqAddr < sizeof(reg_t) * numPrivRegs)
             {
@@ -418,7 +418,7 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
         else if (regAddr >= TcuTlb::PAGE_SIZE * 4)
         {
             // Attestation data
-            DPRINTF(Tcu, "Accessing attestation data in Tcu\n");
+            // DPRINTF(Tcu, "Accessing attestation data in Tcu\n");
             if (pkt->isRead())
             {
                 if (regAddr < (TcuTlb::PAGE_SIZE * 4) + 16)
@@ -500,7 +500,7 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
                 epid_t epId = epAddr / (sizeof(reg_t) * numEpRegs);
                 unsigned regNumber = (epAddr / sizeof(reg_t)) % numEpRegs;
 
-                DPRINTF(Tcu, "Writing to endpoint: %lu\n", epId);
+                // DPRINTF(Tcu, "Writing to endpoint: %lu\n", epId);
 
                 if (lastEp != epId)
                 {
