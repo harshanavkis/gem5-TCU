@@ -91,7 +91,7 @@ class Tcu(BaseTcu):
     transfer_to_noc_latency = Param.Cycles(3, "Number of cycles passed from collecting the data in the buffer until sending it to the NoC");
     noc_to_transfer_latency = Param.Cycles(3, "Number of cycles passed from receiving data from the NoC until starting to transfer it to the local memory");
     data_encryption_latency = Param.Cycles(15, "Number of cycles required to encrypt or decrypt data in 16 byte blocks using AES-GCM")
-    interconnect_transfer_latency = Param.Cycles(0, "Number of cycles to transfer data across the interconnect")
+    interconnect_transfer_latency = Param.Latency('0ns', "Number of cycles to transfer data across the interconnect")
     parallel_pipelined = Param.Bool(False, "If true uses a parallel and pipelined encryption")
     rng_gen_latency = Param.Cycles(5, "Number of cycles to generate random 128 bit nonces")
     sign_gen_latency = Param.Cycles(762, "Number of cycles to generate signature using private key")

@@ -275,7 +275,7 @@ class Tcu : public BaseTcu
 
     const Cycles dataEncryptionLatency;
 
-    const Cycles interconnectTransferLatency;
+    const Tick interconnectTransferLatency;
 
     const bool parallelPipelined;
 

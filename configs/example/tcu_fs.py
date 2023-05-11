@@ -137,7 +137,7 @@ def getOptions():
             default=0,
             help="Number of cycles to encrypt/decrypt 16 byte data blocks in AES-GCM")
 
-    parser.add_option("--int-transfer-latency", action="store", type="int",
+    parser.add_option("--int-transfer-latency", action="store", type="string",
             default=0,
             help="Number of cycles to transfer data across the interconnect")
 

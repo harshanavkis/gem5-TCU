@@ -739,11 +739,11 @@ Tcu::totalEncryptionCost(Addr size)
 {
     if(!attestComplete)
     {
-        return Cycles(0) + interconnectTransferLatency;
+        return Cycles(0) + ticksToCycles(interconnectTransferLatency);
     }
     if(dataEncryptionLatency == 0)
     {
-        return Cycles(0) + interconnectTransferLatency;
+        return Cycles(0) + ticksToCycles(interconnectTransferLatency);
     }
     // If cost for encrypting a single 16B block is n
     // cycles, then in a fully pipelined AES encryption engine
@@ -776,5 +776,5 @@ Tcu::totalEncryptionCost(Addr size)
 
     DPRINTFS(Tcu, this, "num_blocks: %lu, Total encryption cost:%lu\n", num_blocks, total_encryption_cost);
 
-    return (total_encryption_cost) + interconnectTransferLatency;
+    return (total_encryption_cost) + ticksToCycles(interconnectTransferLatency);
 }
