@@ -155,8 +155,12 @@ MemoryUnit::startReadWithEP(EpFile::EpCache &eps)
     // TODO: Add the correct encryption latency
     // Figure out the message structure when a read request is sent
     Cycles one_sided_delay;
-    if(tcu.attestComplete)
+    if(tcu.attestComplete){
         one_sided_delay = tcu.totalEncryptionCost(sizeof(MessageHeader), true);
+
+        // Encryption latency when receiving the requested data
+        // one_sided_delay += tcu.totalEncryptionCost(pkt->getSize(), false);
+    }
     else
         one_sided_delay = Cycles(0);
     tcu.sendNocRequest(Tcu::NocPacketType::READ_REQ,
@@ -232,6 +236,7 @@ MemoryUnit::readComplete(const CmdCommand::Bits& cmd, PacketPtr pkt, TcuError er
     // since the transfer is done in steps, we can start after the header
     // delay here
     Cycles delay = tcu.ticksToCycles(pkt->headerDelay);
+    delay += tcu.totalEncryptionCost(pkt->getSize(), false);
 
     if (error != TcuError::NONE)
     {
@@ -458,6 +463,14 @@ MemoryUnit::recvFromNoc(PacketPtr pkt)
         // start after the header
         DPRINTFS(Tcu, (&tcu), "mem_unit: recvFromNoc: out of mmio region\n");
         Cycles delay = tcu.ticksToCycles(pkt->headerDelay);
+        if(pkt->isWrite())
+        {
+            delay += tcu.totalEncryptionCost(pkt->getSize(), false);
+        }
+        else
+        {
+            delay += tcu.totalEncryptionCost(sizeof(MessageHeader), false);
+        }
         pkt->headerDelay = 0;
 
         auto type = pkt->isWrite() ? XferUnit::TransferType::REMOTE_WRITE

@@ -987,6 +987,16 @@ MessageUnit::recvFromNocWithEP(EpFile::EpCache &eps, PacketPtr pkt)
     pkt->headerDelay = 0;
     delay += tcu.nocToTransferLatency;
 
+    MessageHeader* header = pkt->getPtr<MessageHeader>();
+    if(header->replyEpId != Tcu::INVALID_EP_ID)
+    {
+        delay += tcu.totalEncryptionCost(pkt->getSize() + 32, false);
+    }
+    else
+    {
+        delay += tcu.totalEncryptionCost(pkt->getSize(), false);
+    }
+
     DPRINTFS(Tcu, (&tcu), "msg_unit: recvFromNocWithEP: Confidentiality: ep=%u\n", epid);
 
     uint rflags = XferUnit::XferFlags::MSGRECV;

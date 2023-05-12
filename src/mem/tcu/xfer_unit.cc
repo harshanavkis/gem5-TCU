@@ -312,7 +312,7 @@ XferUnit::startTransfer(TransferEvent *event, Cycles delay)
     else
         bytesWritten.sample(event->remaining);
 
-    DPRINTFS(Tcu, (&tcu), "XferUnit::startTransfer delay: %lu", Cycles(delay + 1));
+    // DPRINTFS(Tcu, (&tcu), "XferUnit::startTransfer delay: %lu\n", Cycles(delay + 1));
 
     tcu.schedule(event, tcu.clockEdge(Cycles(delay + 1)));
 

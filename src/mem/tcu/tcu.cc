@@ -771,15 +771,30 @@ Tcu::totalEncryptionCost(Addr size, bool sender)
     }
 
     Cycles total_encryption_cost;
-    if(!parallelPipelined)
+    if(sender)
     {
-        Cycles one_sided_delay = dataEncryptionLatency + Cycles(num_blocks - 1);
-        total_encryption_cost = one_sided_delay + one_sided_delay;
+        total_encryption_cost = dataEncryptionLatency + Cycles(num_blocks - 1);
     }
     else
     {
-        total_encryption_cost = dataEncryptionLatency + Cycles(num_blocks - 1) + dataEncryptionLatency;
+        if(!parallelPipelined)
+        {
+            total_encryption_cost = dataEncryptionLatency + Cycles(num_blocks - 1);
+        }
+        else
+        {
+            total_encryption_cost = dataEncryptionLatency;
+        }
     }
+    //if(!parallelPipelined)
+    //{
+    //    Cycles one_sided_delay = dataEncryptionLatency + Cycles(num_blocks - 1);
+    //    total_encryption_cost = one_sided_delay + one_sided_delay;
+    //}
+    //else
+    //{
+    //    total_encryption_cost = dataEncryptionLatency + Cycles(num_blocks - 1) + dataEncryptionLatency;
+    //}
 
     DPRINTFS(Tcu, this, "num_blocks: %lu, Total encryption cost:%lu\n", num_blocks, total_encryption_cost);
 
