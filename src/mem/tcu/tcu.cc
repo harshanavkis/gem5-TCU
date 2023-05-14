@@ -86,6 +86,7 @@ Tcu::Tcu(const TcuParams &p)
     rngGenLatency(Cycles(500)),
     signGenLatency(Cycles(762000)),
     signVerifLatency(482000),
+    keyGenLatency(1000),
     attestComplete(false)
 {
     assert(p.buf_size >= maxNocPacketSize);

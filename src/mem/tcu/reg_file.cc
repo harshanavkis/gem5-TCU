@@ -421,6 +421,7 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
             // DPRINTF(Tcu, "Accessing attestation data in Tcu\n");
             if (pkt->isRead())
             {
+                // TODO: This region should be locked to read only in real hardware
                 if (regAddr < (TcuTlb::PAGE_SIZE * 4) + 16)
                 {
                     // Read ICU's challenge nonce
@@ -431,10 +432,20 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
                     // Read ICU signed kernel challenge nonce
                     data[offset / sizeof(reg_t)] = 6;
                 }
-                else
+                else if (regAddr < (TcuTlb::PAGE_SIZE * 4) + 80 + 128)
                 {
                     // Read ICU cert chain from provider
                     data[offset / sizeof(reg_t)] = 7;
+                }
+                else if (regAddr < (TcuTlb::PAGE_SIZE * 4) + 80 + 128 + 32)
+                {
+                    // Read ICU key material
+                    data[offset / sizeof(reg_t)] = 8;
+                }
+                else
+                {
+                    // Read ICU key material signature
+                    data[offset / sizeof(reg_t)] = 9;
                 }
             }
 
@@ -443,13 +454,29 @@ RegFile::handleRequest(PacketPtr pkt, bool isCpuRequest)
                 // Write 16 byte nonce
                 DPRINTF(Tcu, "Set nonce\n");
             }
-            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 24)
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 80)
+            {
+                // Write the nonce's signature
+                DPRINTF(Tcu, "Set nonce signature\n");
+            }
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 112)
+            {
+                // Write the key material
+                DPRINTF(Tcu, "Set key material\n");
+            }
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 176)
+            {
+                // Write signature of key material
+                DPRINTF(Tcu, "Set key material signature\n");
+            }
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 184)
             {
                 // Certificate chain length
                 tcu.certChainLen = data[offset];
+                // tcu.certChainLen = 3;
                 DPRINTF(Tcu, "Set cert chain length: %lu\n", tcu.certChainLen);
             }
-            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 32)
+            else if(regAddr < (TcuTlb::PAGE_SIZE * 4) + 192)
             {
                 // Endpoint to send attestation ready message
                 tcu.attestationEp = data[offset];
