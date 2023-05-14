@@ -285,6 +285,8 @@ class Tcu : public BaseTcu
 
     const Cycles signVerifLatency;
 
+    const Cycles keyGenLatency;
+
     // This ICU has been attested
     bool attestComplete;
 

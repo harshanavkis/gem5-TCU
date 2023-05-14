@@ -559,9 +559,28 @@ MessageUnit::attestWithEP(EpFile::EpCache &eps)
     DPRINTFS(Tcu, (&tcu), "attestWithEP: new AttestationEvent\n");
 
     DPRINTFS(Tcu, (&tcu), "attestWithEP: Certificate generation\n");
-    tcu.startTransfer(ev, tcu.signVerifLatency);
+    DPRINTFS(Tcu, (&tcu), "attestWithEP: cert chain len: %lu\n", tcu.certChainLen);
+    Cycles att_cycles = Cycles(0);
+
+    // Certificate chain, nonce, key gen material from the kernel
+    for(int i=0; i<(tcu.certChainLen + 2); i++)
+        att_cycles += tcu.signVerifLatency;
+
+    // Sign kernel's nonce
+    att_cycles += tcu.signGenLatency;
+
+    // Signed nonce from the ICU
+    att_cycles += tcu.rngGenLatency;
+    att_cycles += tcu.signGenLatency;
+
+    // Signed key material from the ICU
+    att_cycles += (tcu.rngGenLatency + tcu.rngGenLatency);
+    att_cycles += tcu.signGenLatency;
+
+    tcu.startTransfer(ev, att_cycles);
 
     DPRINTFS(Tcu, (&tcu), "attestWithEP: tgtEp: %u\n", sep.r1.tgtEp);
+    DPRINTFS(Tcu, (&tcu), "attestWithEP: cycles: %lu\n", att_cycles);
 
 
     eps.updateEp(sep);
@@ -618,6 +637,14 @@ MessageUnit::attKeyGenWithEP(EpFile::EpCache &eps)
     DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP: new AttestationEvent\n");
 
     tcu.attestComplete = true;
+
+    Cycles att_key_gen_cycles = Cycles(0);
+
+    // Verify kernel signature on ICU nonce
+    att_key_gen_cycles += tcu.signVerifLatency;
+
+    // Generate key
+    att_key_gen_cycles += tcu.keyGenLatency;
 
     DPRINTFS(Tcu, (&tcu), "attKeyGenWithEP: Key generation\n");
     // TODO: Add key generation latency to signVerifLatency
