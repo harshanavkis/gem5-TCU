@@ -106,7 +106,7 @@ def getOptions():
     parser.add_option("--mods", default="", type="string",
                       help="comma separated list of boot modules")
 
-    parser.add_option("--mem-type", type="choice", default="DDR3_1600_8x8",
+    parser.add_option("--mem-type", type="choice", default="DDR4_2400_8x8",
                       choices=ObjectList.mem_list.get_names(),
                       help="type of memory to use")
     parser.add_option("--mem-channels", type="int", default=1,
@@ -719,7 +719,7 @@ def createMemTile(noc, options, no, size, epCount,
     size_bytes = MemorySize(size).value
     if dram:
         tile.mem_ctrl = MemCtrl()
-        tile.mem_ctrl.dram = DDR3_1600_8x8()
+        tile.mem_ctrl.dram = DDR4_2400_8x8()
         tile.mem_ctrl.dram.device_size = size
         tile.mem_ctrl.dram.range = size_bytes
         tile.mem_ctrl.port = tile.xbar.mem_side_ports
